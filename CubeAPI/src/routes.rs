@@ -138,6 +138,10 @@ fn build_template_routes(state: &AppState, auth_configured: bool) -> Router<AppS
             "/templates/compat/:templateID/adopt-baseline",
             post(templates::adopt_template_compat_baseline),
         )
+        .route(
+            "/templates/aliases/:alias",
+            get(templates::get_template_by_alias),
+        )
         .route("/templates/:templateID", get(templates::get_template))
         .route("/templates/:templateID", post(templates::rebuild_template))
         .route("/templates/:templateID", patch(templates::update_template))
@@ -326,6 +330,18 @@ mod tests {
         assert_ne!(
             server.get("/templates").await.status_code(),
             StatusCode::NOT_FOUND
+        );
+    }
+
+    #[tokio::test]
+    async fn template_alias_route_is_mounted_before_template_id_route() {
+        let server = test_server().await;
+
+        let resp = server.get("/templates/aliases/stable-python").await;
+        assert_ne!(
+            resp.status_code(),
+            StatusCode::NOT_FOUND,
+            "alias route should be mounted as its own route, not swallowed by /templates/:templateID"
         );
     }
 
